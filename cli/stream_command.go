@@ -318,13 +318,13 @@ func init() {
 func (c *streamCmd) subjectsAction(_ *fisk.ParseContext) (err error) {
 	asked := c.connectAndAskStream()
 
-	subs, err := c.mgr.StreamContainedSubjects(c.stream, c.filterSubject)
+	subjInfos, err := c.mgr.StreamContainedSubjects(c.stream, c.filterSubject)
 	if err != nil {
 		return err
 	}
 
 	if c.json {
-		printJSON(subs)
+		printJSON(subjInfos)
 		return nil
 	}
 
@@ -332,20 +332,25 @@ func (c *streamCmd) subjectsAction(_ *fisk.ParseContext) (err error) {
 		fmt.Println()
 	}
 
-	if len(subs) == 0 {
+	if len(subjInfos) == 0 {
 		fmt.Printf("No subjects found matching %s\n", c.filterSubject)
 		return nil
 	}
 
 	longest := 0
-	for _, v := range subs {
-		if len(v) > longest {
-			longest = len(v)
+	format := " %s (%s)"
+
+	myStrings := make([]string, len(subjInfos))
+	for i, v := range subjInfos {
+		nameAndNumber := fmt.Sprintf(format, v.SubjectName, humanize.Comma(int64(v.MessageCount)))
+		myStrings[i] = nameAndNumber
+		if len(nameAndNumber) > longest {
+			longest = len(nameAndNumber)
 		}
 	}
 
 	cols := 1
-	format := "  %s\n"
+	format = "  %s\n"
 	switch {
 	case longest < 20:
 		cols = 3
@@ -355,7 +360,7 @@ func (c *streamCmd) subjectsAction(_ *fisk.ParseContext) (err error) {
 		format = "  %-30s %-30s\n"
 	}
 
-	sliceGroups(subs, cols, func(g []string) {
+	sliceGroups(myStrings, cols, func(g []string) {
 		if cols == 1 {
 			fmt.Printf(format, g[0])
 		} else if cols == 2 {
