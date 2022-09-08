@@ -340,12 +340,12 @@ func (c *streamCmd) subjectsAction(_ *fisk.ParseContext) (err error) {
 	longest := 0
 	format := " %s (%s)"
 
-	myStrings := make([]string, len(subjInfos))
-	for i, v := range subjInfos {
-		nameAndNumber := fmt.Sprintf(format, v.SubjectName, humanize.Comma(int64(v.MessageCount)))
-		myStrings[i] = nameAndNumber
-		if len(nameAndNumber) > longest {
-			longest = len(nameAndNumber)
+	myInfoStrings := make([]string, 0, len(subjInfos))
+	for subj, msgs := range subjInfos {
+		infoString := fmt.Sprintf(format, subj, humanize.Comma(int64(msgs)))
+		myInfoStrings = append(myInfoStrings, infoString)
+		if len(infoString) > longest {
+			longest = len(infoString)
 		}
 	}
 
@@ -360,7 +360,7 @@ func (c *streamCmd) subjectsAction(_ *fisk.ParseContext) (err error) {
 		format = "  %-30s %-30s\n"
 	}
 
-	sliceGroups(myStrings, cols, func(g []string) {
+	sliceGroups(myInfoStrings, cols, func(g []string) {
 		if cols == 1 {
 			fmt.Printf(format, g[0])
 		} else if cols == 2 {
