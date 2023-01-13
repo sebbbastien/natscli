@@ -1032,6 +1032,10 @@ func (c *streamCmd) reportAction(_ *fisk.ParseContext) error {
 				if source.FilterSubject != "" {
 					edge.Label(source.FilterSubject)
 				}
+				if source.SubjectTransform != "" {
+					edge2 := dg.Edge(snode, node).Attr("color", "red")
+					edge2.Label(source.SubjectTransform)
+				}
 			}
 		}
 
@@ -1573,12 +1577,12 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 	if cfg.MaxMsgs == -1 {
 		cols.AddRow("Maximum Messages", "unlimited")
 	} else {
-		cols.AddRow("Maximum Messages", cfg.MaxMsgs)
+		cols.AddRow("Maximum Messages", humanize.Comma(cfg.MaxMsgs))
 	}
 	if cfg.MaxMsgsPer <= 0 {
 		cols.AddRow("Maximum Per Subject", "unlimited")
 	} else {
-		cols.AddRow("Maximum Per Subject", cfg.MaxMsgsPer)
+		cols.AddRow("Maximum Per Subject", humanize.Comma(cfg.MaxMsgsPer))
 	}
 	if cfg.MaxBytes == -1 {
 		cols.AddRow("Maximum Bytes", "unlimited")
@@ -1588,7 +1592,7 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 	if cfg.MaxAge <= 0 {
 		cols.AddRow("Maximum Age", "unlimited")
 	} else {
-		cols.AddRow("Maximum Age", cfg.MaxAge)
+		cols.AddRow("Maximum Age", humanizeDuration(cfg.MaxAge))
 	}
 	if cfg.MaxMsgSize == -1 {
 		cols.AddRow("Maximum Message Size", "unlimited")
@@ -1598,7 +1602,7 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 	if cfg.MaxConsumers == -1 {
 		cols.AddRow("Maximum Consumers", "unlimited")
 	} else {
-		cols.AddRow("Maximum Consumers", cfg.MaxConsumers)
+		cols.AddRow("Maximum Consumers", humanize.Comma(int64(cfg.MaxConsumers)))
 	}
 
 	if len(cfg.Metadata) > 0 {
@@ -1643,7 +1647,13 @@ func (c *streamCmd) renderSource(s *api.StreamSource) string {
 		parts = append(parts, fmt.Sprintf("Start Time: %v", s.OptStartTime))
 	}
 	if s.FilterSubject != "" {
-		parts = append(parts, fmt.Sprintf("Subject: %s", s.FilterSubject))
+		parts = append(parts, fmt.Sprintf("Subject filter: %s", s.FilterSubject))
+	}
+	if s.SubjectTransform != "" {
+		if s.FilterSubject == "" {
+			parts = append(parts, fmt.Sprintf("Subject filter: %s", ">"))
+		}
+		parts = append(parts, fmt.Sprintf("Subject transform: %s", s.SubjectTransform))
 	}
 	if s.External != nil {
 		if s.External.ApiPrefix != "" {
@@ -1722,9 +1732,19 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 
 	showSource := func(s *api.StreamSourceInfo) {
 		cols.AddRow("Stream Name", s.Name)
-		cols.AddRow("Lag", s.Lag)
+		if s.SubjectTransform != "" {
+			if s.FilterSubject == "" {
+				cols.AddRow("Subject Filter",">")
+			} else {
+				cols.AddRow("Subject Filter",s.FilterSubject)
+			}
+			cols.AddRow("Subject Transform", s.SubjectTransform)
+		} else {
+			cols.AddRowIfNotEmpty("Subject Filter",s.FilterSubject)
+		}
+		cols.AddRow("Lag", humanize.Comma(int64(s.Lag)))
 		if s.Active > 0 && s.Active < math.MaxInt64 {
-			cols.AddRow("Last Seen", s.Active)
+			cols.AddRow("Last Seen", humanizeDuration(s.Active))
 		} else {
 			cols.AddRow("Last Seen", "never")
 		}
@@ -1752,20 +1772,20 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 	}
 
 	cols.AddSectionTitle("State")
-	cols.AddRow("Messages", info.State.Msgs)
+	cols.AddRow("Messages", humanize.Comma(int64(info.State.Msgs)))
 	cols.AddRow("Bytes", humanize.IBytes(info.State.Bytes))
 	if info.State.Lost != nil && len(info.State.Lost.Msgs) > 0 {
 		cols.AddRowf("Lost Messages", "%s (%s)", humanize.Comma(int64(len(info.State.Lost.Msgs))), humanize.IBytes(info.State.Lost.Bytes))
 	}
 
 	if info.State.FirstTime.Equal(time.Unix(0, 0)) || info.State.LastTime.IsZero() {
-		cols.AddRow("FirstSeq", info.State.FirstSeq)
+		cols.AddRow("FirstSeq", humanize.Comma(int64(info.State.FirstSeq)))
 	} else {
 		cols.AddRowf("FirstSeq", "%s @ %s UTC", humanize.Comma(int64(info.State.FirstSeq)), info.State.FirstTime.Format("2006-01-02T15:04:05"))
 	}
 
 	if info.State.LastTime.Equal(time.Unix(0, 0)) || info.State.LastTime.IsZero() {
-		cols.AddRow("LastSeq", info.State.LastSeq)
+		cols.AddRow("LastSeq", humanize.Comma(int64(info.State.LastSeq)))
 	} else {
 		cols.AddRowf("LastSeq", "%s @ %s UTC", humanize.Comma(int64(info.State.LastSeq)), info.State.LastTime.Format("2006-01-02T15:04:05"))
 	}
@@ -1773,13 +1793,13 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 	if len(info.State.Deleted) > 0 { // backwards compat with older servers
 		cols.AddRow("Deleted Messages", len(info.State.Deleted))
 	} else if info.State.NumDeleted > 0 {
-		cols.AddRow("Deleted Messages", info.State.NumDeleted)
+		cols.AddRow("Deleted Messages", humanize.Comma(int64(info.State.NumDeleted)))
 	}
 
-	cols.AddRow("Active Consumers", info.State.Consumers)
+	cols.AddRow("Active Consumers", humanize.Comma(int64(info.State.Consumers)))
 
 	if info.State.NumSubjects > 0 {
-		cols.AddRow("Number of Subjects", info.State.NumSubjects)
+		cols.AddRow("Number of Subjects", humanize.Comma(int64(info.State.NumSubjects)))
 	}
 
 	if len(info.Alternates) > 0 {
@@ -2281,6 +2301,12 @@ func (c *streamCmd) askSource(name string, prefix string) *api.StreamSource {
 		Help:    "Only replicate data matching this subject",
 	}, &cfg.FilterSubject)
 	fisk.FatalIfError(err, "could not request filter")
+
+	err = askOne(&survey.Input{
+		Message: fmt.Sprintf("%s Subject mapping transform", prefix),
+		Help:    "Map matching subjects according to this destination transform",
+	}, &cfg.SubjectTransform)
+	fisk.FatalIfError(err, "could not request subject mapping destination transform")
 
 	ok, err = askConfirmation(fmt.Sprintf("Import %q from a different JetStream domain", name), false)
 	fisk.FatalIfError(err, "Could not request source details")
