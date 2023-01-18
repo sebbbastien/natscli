@@ -57,6 +57,7 @@ type kvCommand struct {
 	repubHeadersOnly      bool
 	mirror                string
 	mirrorDomain          string
+	sources               []string
 }
 
 func configureKVCommand(app commandHost) {
@@ -87,6 +88,7 @@ for an indefinite period or a per-bucket configured TTL.
 	add.Flag("republish-headers", "Republish only message headers, no bodies").UnNegatableBoolVar(&c.repubHeadersOnly)
 	add.Flag("mirror", "Creates a mirror of a different bucket").StringVar(&c.mirror)
 	add.Flag("mirror-domain", "When mirroring find the bucket in a different domain").StringVar(&c.mirrorDomain)
+	add.Flag("source", "Source from a different bucket").PlaceHolder("BUCKET").StringsVar(&c.sources)
 
 	add.PreAction(c.parseLimitStrings)
 
@@ -463,6 +465,19 @@ func (c *kvCommand) addAction(_ *fisk.ParseContext) error {
 		}
 	}
 
+	if len(c.sources) != 0 {
+		var sources []*nats.StreamSource
+
+		for _, source := range c.sources {
+			sources = append(sources, &nats.StreamSource{
+				Name:             "KV_" + source,
+				FilterSubject:    fmt.Sprintf("$KV.%s.>", source),
+				SubjectTransform: fmt.Sprintf("$KV.%s.>", c.bucket),
+			})
+		}
+		cfg.Sources = sources
+	}
+
 	store, err := js.CreateKeyValue(cfg)
 	if err != nil {
 		return err
@@ -787,6 +802,15 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 
 			fmt.Println()
 		}
+
+		if len(nfo.Sources) > 0 {
+			fmt.Println("\n Sources Information:")
+			fmt.Println()
+			for _, source := range nfo.Sources {
+				fmt.Printf("        Source Bucket: %s\n", strings.TrimPrefix(source.Name, "KV_"))
+			}
+		}
+
 		if nfo.Cluster != nil {
 			fmt.Println("\n  Cluster Information:")
 			fmt.Println()
