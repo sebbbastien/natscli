@@ -470,9 +470,7 @@ func (c *kvCommand) addAction(_ *fisk.ParseContext) error {
 
 		for _, source := range c.sources {
 			sources = append(sources, &nats.StreamSource{
-				Name:             "KV_" + source,
-				FilterSubject:    fmt.Sprintf("$KV.%s.>", source),
-				SubjectTransform: fmt.Sprintf("$KV.%s.>", c.bucket),
+				Name: source,
 			})
 		}
 		cfg.Sources = sources
