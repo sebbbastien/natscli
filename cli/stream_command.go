@@ -1033,12 +1033,10 @@ func (c *streamCmd) reportAction(_ *fisk.ParseContext) error {
 					snode = dg.Node(source.Name)
 				}
 				edge := dg.Edge(snode, node).Attr("color", "green")
-				if source.FilterSubject != "" {
+				if source.FilterSubject != "" && source.SubjectTransformDest == "" {
 					edge.Label(source.FilterSubject)
-				}
-				if source.SubjectTransformDest != "" {
-					edge2 := dg.Edge(snode, node).Attr("color", "red")
-					edge2.Label(source.SubjectTransformDest)
+				} else if source.FilterSubject != "" && source.SubjectTransformDest != "" {
+					edge.Label(source.FilterSubject + " to " + source.SubjectTransformDest)
 				}
 			}
 		}
@@ -1102,7 +1100,7 @@ func (c *streamCmd) reportAction(_ *fisk.ParseContext) error {
 
 func (c *streamCmd) renderReplication(stats []streamStat) {
 	table := newTableWriter("Replication Report")
-	table.AddHeaders("Stream", "Kind", "API Prefix", "Source Stream", "Active", "Lag", "Error")
+	table.AddHeaders("Stream", "Kind", "API Prefix", "Source Stream", "Filter", "Destination", "Active", "Lag", "Error")
 
 	for _, s := range stats {
 		if len(s.Sources) == 0 && s.Mirror == nil {
@@ -1121,9 +1119,9 @@ func (c *streamCmd) renderReplication(stats []streamStat) {
 			}
 
 			if c.reportRaw {
-				table.AddRow(s.Name, "Mirror", eApiPrefix, s.Mirror.Name, s.Mirror.Active, s.Mirror.Lag, apierr)
+				table.AddRow(s.Name, "Mirror", eApiPrefix, s.Mirror.Name, "", "", s.Mirror.Active, s.Mirror.Lag, apierr)
 			} else {
-				table.AddRow(s.Name, "Mirror", eApiPrefix, s.Mirror.Name, humanizeDuration(s.Mirror.Active), humanize.Comma(int64(s.Mirror.Lag)), apierr)
+				table.AddRow(s.Name, "Mirror", eApiPrefix, s.Mirror.Name, "", "", humanizeDuration(s.Mirror.Active), humanize.Comma(int64(s.Mirror.Lag)), apierr)
 			}
 		}
 
@@ -1139,9 +1137,9 @@ func (c *streamCmd) renderReplication(stats []streamStat) {
 			}
 
 			if c.reportRaw {
-				table.AddRow(s.Name, "Source", eApiPrefix, source.Name, source.Active, source.Lag, apierr)
+				table.AddRow(s.Name, "Source", eApiPrefix, source.Name, source.FilterSubject, source.SubjectTransformDest, source.Active, source.Lag, apierr)
 			} else {
-				table.AddRow(s.Name, "Source", eApiPrefix, source.Name, humanizeDuration(source.Active), humanize.Comma(int64(source.Lag)), apierr)
+				table.AddRow(s.Name, "Source", eApiPrefix, source.Name, source.FilterSubject, source.SubjectTransformDest, humanizeDuration(source.Active), humanize.Comma(int64(source.Lag)), apierr)
 			}
 
 		}
