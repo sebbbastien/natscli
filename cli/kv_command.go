@@ -801,6 +801,13 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 			cols.AddSectionTitle("Sources Information")
 			for _, source := range nfo.Sources {
 				cols.AddRow("Source Bucket", strings.TrimPrefix(source.Name, "KV_"))
+				cols.AddRowIf("External API", source.External.APIPrefix, source.External != nil)
+				if source.Active > 0 && source.Active < math.MaxInt64 {
+					cols.AddRow("Last Seen", humanizeDuration(source.Active))
+				} else {
+					cols.AddRow("Last Seen","never")
+				}
+				cols.AddRow("Lag", humanize.Comma(int64(source.Lag)))
 			}
 		}
 
