@@ -2215,7 +2215,7 @@ func (c *streamCmd) prepareConfig(_ *fisk.ParseContext, requireSize bool) api.St
 		}
 	}
 
-	if c.subjectTransformDest != "" {
+	if c.subjectTransformSource != "" && c.subjectTransformDest != "" {
 		cfg.SubjectTransform = &api.SubjectTransformConfig{
 			Source:      c.subjectTransformSource,
 			Destination: c.subjectTransformDest,
