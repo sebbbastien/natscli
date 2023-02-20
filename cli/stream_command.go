@@ -1487,9 +1487,6 @@ func (c *streamCmd) interactiveEdit(cfg api.StreamConfig) (api.StreamConfig, err
 }
 
 func (c *streamCmd) editAction(pc *fisk.ParseContext) error {
-	//if (c.repubSource != "" && c.repubDest == "") || (c.repubSource == "" && c.repubDest != "") {
-	//	fisk.Fatalf("must specify both --republish-source and --republish-destination")
-	//}
 
 	c.connectAndAskStream()
 
@@ -1627,6 +1624,14 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 
 	cols.AddSectionTitle("Options")
 
+	if cfg.SubjectTransform != nil && cfg.SubjectTransform.Destination != "" {
+		source := cfg.SubjectTransform.Source
+		if source == "" {
+			source = ">"
+		}
+		cols.AddRowf("Subject Transform", "'%s' -> '%s'", source, cfg.SubjectTransform.Destination)
+	}
+
 	cols.AddRow("Retention", cfg.Retention.String())
 	cols.AddRow("Acknowledgments", !cfg.NoAck)
 	dnp := cfg.Discard.String()
@@ -1699,6 +1704,14 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 		}
 	}
 
+	if cfg.RePublish != nil {
+		if cfg.RePublish.HeadersOnly {
+			cols.AddRowf("Republishing Headers","%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
+		} else {
+			cols.AddRowf("Republishing","%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
+		}
+	}
+
 	cols.Println()
 }
 
@@ -1716,13 +1729,13 @@ func (c *streamCmd) renderSource(s *api.StreamSource) string {
 		parts = append(parts, fmt.Sprintf("Start Time: %v", s.OptStartTime))
 	}
 	if s.FilterSubject != "" {
-		parts = append(parts, fmt.Sprintf("Subject filter: %s", s.FilterSubject))
+		parts = append(parts, fmt.Sprintf("Filter: %s", s.FilterSubject))
 	}
 	if s.SubjectTransformDest != "" {
 		if s.FilterSubject == "" {
-			parts = append(parts, fmt.Sprintf("Subject filter: %s", ">"))
+			parts = append(parts, fmt.Sprintf("Filter: %s", ">"))
 		}
-		parts = append(parts, fmt.Sprintf("Subject transform: %s", s.SubjectTransformDest))
+		parts = append(parts, fmt.Sprintf("Transform: %s", s.SubjectTransformDest))
 	}
 	if s.External != nil {
 		if s.External.ApiPrefix != "" {
@@ -2378,11 +2391,13 @@ func (c *streamCmd) askSource(name string, prefix string) *api.StreamSource {
 	}, &cfg.FilterSubject)
 	fisk.FatalIfError(err, "could not request filter")
 
-	err = askOne(&survey.Input{
-		Message: fmt.Sprintf("%s Subject mapping transform", prefix),
-		Help:    "Map matching subjects according to this transform destination",
-	}, &cfg.SubjectTransformDest)
-	fisk.FatalIfError(err, "could not request subject mapping destination transform")
+	if cfg.FilterSubject != "" {
+		err = askOne(&survey.Input{
+			Message: fmt.Sprintf("%s Subject mapping transform", prefix),
+			Help:    "Map matching subjects according to this transform destination",
+		}, &cfg.SubjectTransformDest)
+		fisk.FatalIfError(err, "could not request subject mapping destination transform")
+	}
 
 	ok, err = askConfirmation(fmt.Sprintf("Import %q from a different JetStream domain", name), false)
 	fisk.FatalIfError(err, "Could not request source details")
