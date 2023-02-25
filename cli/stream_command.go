@@ -1720,22 +1720,28 @@ func (c *streamCmd) renderSource(s *api.StreamSource) string {
 		return ""
 	}
 
-	parts := []string{s.Name}
+	var parts []string
+
+	if s.FilterSubject == "" && s.SubjectTransformDest == "" {
+		parts = append(parts, s.Name)
+	} else {
+		var filter = ">"
+		if s.FilterSubject != "" {
+			filter = s.FilterSubject
+		}
+		if s.SubjectTransformDest != "" {
+			parts = append(parts, fmt.Sprintf("%s (%s to %s)", s.Name, filter, s.SubjectTransformDest))
+		} else {
+			parts = append(parts, fmt.Sprintf("%s (%s)", s.Name, s.FilterSubject))
+		}
+	}
+
 	if s.OptStartSeq > 0 {
 		parts = append(parts, fmt.Sprintf("Start Seq: %s", humanize.Comma(int64(s.OptStartSeq))))
 	}
 
 	if s.OptStartTime != nil {
 		parts = append(parts, fmt.Sprintf("Start Time: %v", s.OptStartTime))
-	}
-	if s.FilterSubject != "" {
-		parts = append(parts, fmt.Sprintf("Filter: %s", s.FilterSubject))
-	}
-	if s.SubjectTransformDest != "" {
-		if s.FilterSubject == "" {
-			parts = append(parts, fmt.Sprintf("Filter: %s", ">"))
-		}
-		parts = append(parts, fmt.Sprintf("Transform: %s", s.SubjectTransformDest))
 	}
 	if s.External != nil {
 		if s.External.ApiPrefix != "" {
@@ -1815,12 +1821,11 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 	showSource := func(s *api.StreamSourceInfo) {
 		cols.AddRow("Stream Name", s.Name)
 		if s.SubjectTransformDest != "" {
-			if s.FilterSubject == "" {
-				cols.AddRow("Subject Filter",">")
-			} else {
-				cols.AddRow("Subject Filter",s.FilterSubject)
+			var filter = ">"
+			if s.FilterSubject != "" {
+				filter = s.FilterSubject
 			}
-			cols.AddRow("Subject Transform", s.SubjectTransformDest)
+			cols.AddRowf("Subject Transform", "%s to %s",filter,s.SubjectTransformDest)
 		} else {
 			cols.AddRowIfNotEmpty("Subject Filter",s.FilterSubject)
 		}
