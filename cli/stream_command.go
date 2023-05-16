@@ -1587,17 +1587,8 @@ func (c *streamCmd) cpAction(pc *fisk.ParseContext) error {
 }
 
 func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
-
 	cols.AddRowIfNotEmpty("Description", cfg.Description)
-
 	cols.AddRowIf("Subjects", cfg.Subjects, len(cfg.Subjects) > 0)
-	if cfg.SubjectTransform != nil && cfg.SubjectTransform.Destination != "" {
-		source := cfg.SubjectTransform.Source
-		if source == "" {
-			source = ">"
-		}
-		cols.AddRowf("Subject Transform", "Source: %s, Destination %s", source, cfg.SubjectTransform.Destination)
-	}
 	cols.AddRow("Replicas", cfg.Replicas)
 	cols.AddRowIf("Sealed", true, cfg.Sealed)
 	cols.AddRow("Storage", cfg.Storage.String())
@@ -1605,13 +1596,6 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 	if cfg.Placement != nil {
 		cols.AddRowIfNotEmpty("Placement Cluster", cfg.Placement.Cluster)
 		cols.AddRowIf("Placement Tags", cfg.Placement.Tags, len(cfg.Placement.Tags) > 0)
-	}
-	if cfg.RePublish != nil {
-		if cfg.RePublish.HeadersOnly {
-			cols.AddRowf("Republishing Headers", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
-		} else {
-			cols.AddRowf("Republishing", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
-		}
 	}
 
 	cols.AddSectionTitle("Options")
@@ -1621,9 +1605,15 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 		if source == "" {
 			source = ">"
 		}
-		cols.AddRowf("Subject Transform", "'%s' -> '%s'", source, cfg.SubjectTransform.Destination)
+		cols.AddRowf("Subject Transform", "%s to %s", source, cfg.SubjectTransform.Destination)
 	}
-
+	if cfg.RePublish != nil {
+		if cfg.RePublish.HeadersOnly {
+			cols.AddRowf("Republishing Headers", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
+		} else {
+			cols.AddRowf("Republishing", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
+		}
+	}
 	cols.AddRow("Retention", cfg.Retention.String())
 	cols.AddRow("Acknowledgments", !cfg.NoAck)
 	dnp := cfg.Discard.String()
@@ -1693,14 +1683,6 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 			}
 
 			cols.AddRow(l, c.renderSource(source))
-		}
-	}
-
-	if cfg.RePublish != nil {
-		if cfg.RePublish.HeadersOnly {
-			cols.AddRowf("Republishing Headers", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
-		} else {
-			cols.AddRowf("Republishing", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
 		}
 	}
 
@@ -1837,6 +1819,7 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 			cols.AddRow("Error", s.Error.Description)
 		}
 	}
+
 	if info.Mirror != nil {
 		cols.AddSectionTitle("Mirror Information")
 		showSource(info.Mirror)
@@ -1851,36 +1834,31 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 	}
 
 	cols.AddSectionTitle("State")
+
 	cols.AddRow("Messages", humanize.Comma(int64(info.State.Msgs)))
 	cols.AddRow("Bytes", humanize.IBytes(info.State.Bytes))
 	if info.State.Lost != nil && len(info.State.Lost.Msgs) > 0 {
 		cols.AddRowf("Lost Messages", "%s (%s)", humanize.Comma(int64(len(info.State.Lost.Msgs))), humanize.IBytes(info.State.Lost.Bytes))
 	}
-
 	if info.State.FirstTime.Equal(time.Unix(0, 0)) || info.State.LastTime.IsZero() {
 		cols.AddRow("FirstSeq", humanize.Comma(int64(info.State.FirstSeq)))
 	} else {
 		cols.AddRowf("FirstSeq", "%s @ %s UTC", humanize.Comma(int64(info.State.FirstSeq)), info.State.FirstTime.Format("2006-01-02T15:04:05"))
 	}
-
 	if info.State.LastTime.Equal(time.Unix(0, 0)) || info.State.LastTime.IsZero() {
 		cols.AddRow("LastSeq", humanize.Comma(int64(info.State.LastSeq)))
 	} else {
 		cols.AddRowf("LastSeq", "%s @ %s UTC", humanize.Comma(int64(info.State.LastSeq)), info.State.LastTime.Format("2006-01-02T15:04:05"))
 	}
-
 	if len(info.State.Deleted) > 0 { // backwards compat with older servers
 		cols.AddRow("Deleted Messages", len(info.State.Deleted))
 	} else if info.State.NumDeleted > 0 {
 		cols.AddRow("Deleted Messages", humanize.Comma(int64(info.State.NumDeleted)))
 	}
-
 	cols.AddRow("Active Consumers", humanize.Comma(int64(info.State.Consumers)))
-
 	if info.State.NumSubjects > 0 {
 		cols.AddRow("Number of Subjects", humanize.Comma(int64(info.State.NumSubjects)))
 	}
-
 	if len(info.Alternates) > 0 {
 		lName := 0
 		lCluster := 0
@@ -1892,7 +1870,6 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 				lCluster = len(s.Cluster)
 			}
 		}
-
 		for i, s := range info.Alternates {
 			msg := fmt.Sprintf("%s%s: Cluster: %s%s", strings.Repeat(" ", lName-len(s.Name)), s.Name, strings.Repeat(" ", lCluster-len(s.Cluster)), s.Cluster)
 			if s.Domain != "" {

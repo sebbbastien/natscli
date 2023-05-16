@@ -571,7 +571,6 @@ func (c *consumerCmd) showInfo(config api.ConsumerConfig, state api.ConsumerInfo
 	cols.AddRowIfNotEmpty("Name", config.Name)
 	cols.AddRowIf("Durable Name", config.Durable, config.Durable != "" && config.Durable != config.Name)
 	cols.AddRowIfNotEmpty("Description", config.Description)
-
 	if config.DeliverSubject != "" {
 		cols.AddRow("Delivery Subject", config.DeliverSubject)
 	} else {
@@ -582,7 +581,6 @@ func (c *consumerCmd) showInfo(config api.ConsumerConfig, state api.ConsumerInfo
 	} else if len(config.FilterSubjects) > 0 {
 		cols.AddRow("Filter Subjects", config.FilterSubjects)
 	}
-
 	switch config.DeliverPolicy {
 	case api.DeliverAll:
 		cols.AddRow("Deliver Policy", "All")
@@ -597,7 +595,6 @@ func (c *consumerCmd) showInfo(config api.ConsumerConfig, state api.ConsumerInfo
 	case api.DeliverByStartSequence:
 		cols.AddRowf("Deliver Policy", "From Sequence %d", config.OptStartSeq)
 	}
-
 	cols.AddRowIf("Deliver Queue Group", config.DeliverGroup, config.DeliverGroup != "" && config.DeliverSubject != "")
 	cols.AddRow("Ack Policy", config.AckPolicy.String())
 	cols.AddRowIf("Ack Wait", config.AckWait, config.AckPolicy != api.AckNone)
@@ -655,7 +652,6 @@ func (c *consumerCmd) showInfo(config api.ConsumerConfig, state api.ConsumerInfo
 	} else {
 		cols.AddRowf("Last Delivered Message", "Consumer sequence: %s Stream sequence: %s Last delivery: %s ago", humanize.Comma(int64(state.Delivered.Consumer)), humanize.Comma(int64(state.Delivered.Stream)), humanizeDuration(time.Since(*state.Delivered.Last)))
 	}
-
 	if config.AckPolicy != api.AckNone {
 		if state.AckFloor.Last == nil {
 			cols.AddRowf("Acknowledgment floor", "Consumer sequence: %s Stream sequence: %s", humanize.Comma(int64(state.AckFloor.Consumer)), humanize.Comma(int64(state.AckFloor.Stream)))
@@ -669,7 +665,6 @@ func (c *consumerCmd) showInfo(config api.ConsumerConfig, state api.ConsumerInfo
 		}
 		cols.AddRow("Redelivered Messages", state.NumRedelivered)
 	}
-
 	cols.AddRow("Unprocessed Messages", state.NumPending)
 	if config.DeliverSubject == "" {
 		if config.MaxWaiting > 0 {
