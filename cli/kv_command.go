@@ -805,7 +805,7 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 				if source.Active > 0 && source.Active < math.MaxInt64 {
 					cols.AddRow("Last Seen", humanizeDuration(source.Active))
 				} else {
-					cols.AddRow("Last Seen","never")
+					cols.AddRow("Last Seen", "never")
 				}
 				cols.AddRow("Lag", humanize.Comma(int64(source.Lag)))
 			}

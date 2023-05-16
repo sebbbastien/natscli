@@ -123,7 +123,7 @@ type streamCmd struct {
 	showStateOnly             bool
 	metadata                  map[string]string
 	metadataIsSet             bool
-	compression            string
+	compression               string
 
 	fServer      string
 	fCluster     string
@@ -1604,7 +1604,7 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 		if source == "" {
 			source = ">"
 		}
-		cols.AddRowf("Subject Transform","Source: %s, Destination %s",source, cfg.SubjectTransform.Destination)
+		cols.AddRowf("Subject Transform", "Source: %s, Destination %s", source, cfg.SubjectTransform.Destination)
 	}
 	cols.AddRow("Replicas", cfg.Replicas)
 	cols.AddRowIf("Sealed", true, cfg.Sealed)
@@ -1706,9 +1706,9 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 
 	if cfg.RePublish != nil {
 		if cfg.RePublish.HeadersOnly {
-			cols.AddRowf("Republishing Headers","%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
+			cols.AddRowf("Republishing Headers", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
 		} else {
-			cols.AddRowf("Republishing","%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
+			cols.AddRowf("Republishing", "%s to %s", cfg.RePublish.Source, cfg.RePublish.Destination)
 		}
 	}
 
@@ -1825,9 +1825,9 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 			if s.FilterSubject != "" {
 				filter = s.FilterSubject
 			}
-			cols.AddRowf("Subject Transform", "%s to %s",filter,s.SubjectTransformDest)
+			cols.AddRowf("Subject Transform", "%s to %s", filter, s.SubjectTransformDest)
 		} else {
-			cols.AddRowIfNotEmpty("Subject Filter",s.FilterSubject)
+			cols.AddRowIfNotEmpty("Subject Filter", s.FilterSubject)
 		}
 		cols.AddRow("Lag", humanize.Comma(int64(s.Lag)))
 		if s.Active > 0 && s.Active < math.MaxInt64 {
