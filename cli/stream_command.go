@@ -1633,32 +1633,32 @@ func (c *streamCmd) showStreamConfig(cols *columnWriter, cfg api.StreamConfig) {
 	if cfg.MaxMsgs == -1 {
 		cols.AddRow("Maximum Messages", "unlimited")
 	} else {
-		cols.AddRow("Maximum Messages", humanize.Comma(cfg.MaxMsgs))
+		cols.AddRow("Maximum Messages", cfg.MaxMsgs)
 	}
 	if cfg.MaxMsgsPer <= 0 {
 		cols.AddRow("Maximum Per Subject", "unlimited")
 	} else {
-		cols.AddRow("Maximum Per Subject", humanize.Comma(cfg.MaxMsgsPer))
+		cols.AddRow("Maximum Per Subject", cfg.MaxMsgsPer)
 	}
 	if cfg.MaxBytes == -1 {
 		cols.AddRow("Maximum Bytes", "unlimited")
 	} else {
-		cols.AddRow("Maximum Bytes", humanize.IBytes(uint64(cfg.MaxBytes)))
+		cols.AddRow("Maximum Bytes", cfg.MaxBytes)
 	}
 	if cfg.MaxAge <= 0 {
 		cols.AddRow("Maximum Age", "unlimited")
 	} else {
-		cols.AddRow("Maximum Age", humanizeDuration(cfg.MaxAge))
+		cols.AddRow("Maximum Age", cfg.MaxAge)
 	}
 	if cfg.MaxMsgSize == -1 {
 		cols.AddRow("Maximum Message Size", "unlimited")
 	} else {
-		cols.AddRow("Maximum Message Size", humanize.IBytes(uint64(cfg.MaxMsgSize)))
+		cols.AddRow("Maximum Message Size", cfg.MaxMsgSize)
 	}
 	if cfg.MaxConsumers == -1 {
 		cols.AddRow("Maximum Consumers", "unlimited")
 	} else {
-		cols.AddRow("Maximum Consumers", humanize.Comma(int64(cfg.MaxConsumers)))
+		cols.AddRow("Maximum Consumers", cfg.MaxConsumers)
 	}
 
 	if len(cfg.Metadata) > 0 {
@@ -1803,9 +1803,9 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 		} else {
 			cols.AddRowIfNotEmpty("Subject Filter", s.FilterSubject)
 		}
-		cols.AddRow("Lag", humanize.Comma(int64(s.Lag)))
+		cols.AddRow("Lag", s.Lag)
 		if s.Active > 0 && s.Active < math.MaxInt64 {
-			cols.AddRow("Last Seen", humanizeDuration(s.Active))
+			cols.AddRow("Last Seen", s.Active)
 		} else {
 			cols.AddRow("Last Seen", "never")
 		}
@@ -1835,29 +1835,29 @@ func (c *streamCmd) showStreamInfo(info *api.StreamInfo) {
 
 	cols.AddSectionTitle("State")
 
-	cols.AddRow("Messages", humanize.Comma(int64(info.State.Msgs)))
-	cols.AddRow("Bytes", humanize.IBytes(info.State.Bytes))
+	cols.AddRow("Messages", info.State.Msgs)
+	cols.AddRow("Bytes", info.State.Bytes)
 	if info.State.Lost != nil && len(info.State.Lost.Msgs) > 0 {
 		cols.AddRowf("Lost Messages", "%s (%s)", humanize.Comma(int64(len(info.State.Lost.Msgs))), humanize.IBytes(info.State.Lost.Bytes))
 	}
 	if info.State.FirstTime.Equal(time.Unix(0, 0)) || info.State.LastTime.IsZero() {
-		cols.AddRow("FirstSeq", humanize.Comma(int64(info.State.FirstSeq)))
+		cols.AddRow("FirstSeq", info.State.FirstSeq)
 	} else {
 		cols.AddRowf("FirstSeq", "%s @ %s UTC", humanize.Comma(int64(info.State.FirstSeq)), info.State.FirstTime.Format("2006-01-02T15:04:05"))
 	}
 	if info.State.LastTime.Equal(time.Unix(0, 0)) || info.State.LastTime.IsZero() {
-		cols.AddRow("LastSeq", humanize.Comma(int64(info.State.LastSeq)))
+		cols.AddRow("LastSeq", info.State.LastSeq)
 	} else {
 		cols.AddRowf("LastSeq", "%s @ %s UTC", humanize.Comma(int64(info.State.LastSeq)), info.State.LastTime.Format("2006-01-02T15:04:05"))
 	}
 	if len(info.State.Deleted) > 0 { // backwards compat with older servers
 		cols.AddRow("Deleted Messages", len(info.State.Deleted))
 	} else if info.State.NumDeleted > 0 {
-		cols.AddRow("Deleted Messages", humanize.Comma(int64(info.State.NumDeleted)))
+		cols.AddRow("Deleted Messages", info.State.NumDeleted)
 	}
-	cols.AddRow("Active Consumers", humanize.Comma(int64(info.State.Consumers)))
+	cols.AddRow("Active Consumers", info.State.Consumers)
 	if info.State.NumSubjects > 0 {
-		cols.AddRow("Number of Subjects", humanize.Comma(int64(info.State.NumSubjects)))
+		cols.AddRow("Number of Subjects", info.State.NumSubjects)
 	}
 	if len(info.Alternates) > 0 {
 		lName := 0

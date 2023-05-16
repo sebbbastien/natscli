@@ -751,28 +751,28 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 	cols.AddSectionTitle("Configuration")
 
 	cols.AddRow("Bucket Name", status.Bucket())
-	cols.AddRow("History Kept", humanize.Comma(status.History()))
-	cols.AddRow("Values Stored", humanize.Comma(int64(status.Values())))
+	cols.AddRow("History Kept", status.History())
+	cols.AddRow("Values Stored", status.Values())
 	cols.AddRow("Backing Store Kind", status.BackingStore())
 
 	if nfo != nil {
 		cols.AddRowIfNotEmpty("Description", nfo.Config.Description)
 
-		cols.AddRow("Bucket Size", humanize.IBytes(nfo.State.Bytes))
+		cols.AddRow("Bucket Size", nfo.State.Bytes)
 		if nfo.Config.MaxBytes == -1 {
 			cols.AddRow("Maximum Bucket Size", "unlimited")
 		} else {
-			cols.AddRow("Maximum Bucket Size", humanize.IBytes(uint64(nfo.Config.MaxBytes)))
+			cols.AddRow("Maximum Bucket Size", nfo.Config.MaxBytes)
 		}
 		if nfo.Config.MaxMsgSize == -1 {
 			cols.AddRow("Maximum Value Size", "unlimited")
 		} else {
-			cols.AddRow("Maximum Value Size", humanize.IBytes(uint64(nfo.Config.MaxMsgSize)))
+			cols.AddRow("Maximum Value Size", nfo.Config.MaxMsgSize)
 		}
 		if nfo.Config.MaxAge <= 0 {
 			cols.AddRow("Maximum Age", "unlimited")
 		} else {
-			cols.AddRow("Maximum Age", humanizeDuration(nfo.Config.MaxAge))
+			cols.AddRow("Maximum Age", nfo.Config.MaxAge)
 		}
 		cols.AddRow("JetStream Stream", nfo.Config.Name)
 		cols.AddRow("Storage", nfo.Config.Storage.String())
@@ -790,11 +790,11 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 			cols.AddRow("Origin Bucket", strings.TrimPrefix(s.Name, "KV_"))
 			cols.AddRowIf("External API", s.External.APIPrefix, s.External != nil)
 			if s.Active > 0 && s.Active < math.MaxInt64 {
-				cols.AddRow("Last Seen", humanizeDuration(s.Active))
+				cols.AddRow("Last Seen", s.Active)
 			} else {
 				cols.AddRowf("Last Seen", "never")
 			}
-			cols.AddRow("Lag", humanize.Comma(int64(s.Lag)))
+			cols.AddRow("Lag", s.Lag)
 		}
 
 		if len(nfo.Sources) > 0 {
@@ -803,11 +803,11 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 				cols.AddRow("Source Bucket", strings.TrimPrefix(source.Name, "KV_"))
 				cols.AddRowIf("External API", source.External.APIPrefix, source.External != nil)
 				if source.Active > 0 && source.Active < math.MaxInt64 {
-					cols.AddRow("Last Seen", humanizeDuration(source.Active))
+					cols.AddRow("Last Seen", source.Active)
 				} else {
 					cols.AddRow("Last Seen", "never")
 				}
-				cols.AddRow("Lag", humanize.Comma(int64(source.Lag)))
+				cols.AddRow("Lag", source.Lag)
 			}
 		}
 
