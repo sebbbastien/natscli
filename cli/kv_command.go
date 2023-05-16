@@ -788,7 +788,9 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 			s := nfo.Mirror
 			cols.AddSectionTitle("Mirror Information")
 			cols.AddRow("Origin Bucket", strings.TrimPrefix(s.Name, "KV_"))
-			cols.AddRowIf("External API", s.External.APIPrefix, s.External != nil)
+			if s.External != nil {
+				cols.AddRow("External API", s.External.APIPrefix)
+			}
 			if s.Active > 0 && s.Active < math.MaxInt64 {
 				cols.AddRow("Last Seen", s.Active)
 			} else {
@@ -801,7 +803,9 @@ func (c *kvCommand) showStatus(store nats.KeyValue) error {
 			cols.AddSectionTitle("Sources Information")
 			for _, source := range nfo.Sources {
 				cols.AddRow("Source Bucket", strings.TrimPrefix(source.Name, "KV_"))
-				cols.AddRowIf("External API", source.External.APIPrefix, source.External != nil)
+				if source.External != nil {
+					cols.AddRow("External API", source.External.APIPrefix)
+				}
 				if source.Active > 0 && source.Active < math.MaxInt64 {
 					cols.AddRow("Last Seen", source.Active)
 				} else {
